@@ -5,7 +5,7 @@
 //!
 //! ```math
 //! maximize 3*x0 + 1*x1 + 5*x2 + x3
-//! such that              
+//! such that
 //!          3*x0 + 1*x1 + 2*x2        = 30,
 //!          2*x0 + 1*x1 + 3*x2 + 1*x3 > 15,
 //!                 2*x1 +      + 3*x3 < 25
@@ -16,41 +16,41 @@
 //! Can be implemented as:
 //! ```
 //! extern crate mosekcomodel;
-//! 
+//!
 //! use mosekcomodel::*;
 //! use mosekcomodel_highs::Model;
-//! 
+//!
 //! fn lo1() -> (SolutionStatus,SolutionStatus,Result<Vec<f64>,String>) {
 //!     let a0 : &[f64] = &[ 3.0, 1.0, 2.0, 0.0 ];
 //!     let a1 : &[f64] = &[ 2.0, 1.0, 3.0, 1.0 ];
 //!     let a2 : &[f64] = &[ 0.0, 2.0, 0.0, 3.0 ];
 //!     let c  : &[f64] = &[ 3.0, 1.0, 5.0, 1.0 ];
-//! 
+//!
 //!     // Create a model with the name 'lo1'
 //!     let mut m = Model::new(Some("lo1"));
 //!     // Create variable 'x' of length 4
 //!     let x = m.variable(Some("x0"), nonnegative().with_shape(&[4]));
-//! 
+//!
 //!     // Create constraints
 //!     let _ = m.constraint(None, x.index(1), less_than(10.0));
 //!     let _ = m.constraint(Some("c1"), x.dot(a0), equal_to(30.0));
 //!     let _ = m.constraint(Some("c2"), x.dot(a1), greater_than(15.0));
 //!     let _ = m.constraint(Some("c3"), x.dot(a2), less_than(25.0));
-//! 
+//!
 //!     // Set the objective function to (c^t * x)
 //!     m.objective(Some("obj"), Sense::Maximize, x.dot(c));
-//! 
+//!
 //!     // Solve the problem
 //!     //m.write_problem("lo1-nosol.ptf");
 //!     m.solve();
-//! 
+//!
 //!     // Get the solution values
 //!     let (psta,dsta) = m.solution_status(SolutionType::Default);
 //!     let xx = m.primal_solution(SolutionType::Default,&x);
-//! 
+//!
 //!     (psta,dsta,m.primal_solution(SolutionType::Default,&x))
 //! }
-//! 
+//!
 //! fn main() {
 //!     let (psta,dsta,xx) = lo1();
 //!     println!("Status = {:?}/{:?}",psta,dsta);
@@ -77,13 +77,13 @@ enum Item {
     RangedLower{index:usize},
 }
 impl Item {
-    fn index(&self) -> usize { 
+    fn index(&self) -> usize {
         match self {
             Item::Linear { index }      => *index,
             Item::RangedUpper { index } => *index,
             Item::RangedLower { index } => *index
         }
-    } 
+    }
 }
 /// Simple model object.
 #[derive(Default)]
@@ -125,7 +125,7 @@ impl BaseModelTrait for ModelHighs {
     fn free_variable<const N : usize>
         (&mut self,
          _name  : Option<&str>,
-         shape : &[usize;N]) -> Result<<LinearDomain<N> as VarDomainTrait<Self>>::Result, String> where Self : Sized 
+         shape : &[usize;N]) -> Result<<LinearDomain<N> as VarDomainTrait<Self>>::Result, String> where Self : Sized
     {
         let n = shape.iter().product::<usize>();
         let first = self.var_range_lb.len();
@@ -145,10 +145,10 @@ impl BaseModelTrait for ModelHighs {
     }
 
     fn linear_variable<const N : usize,R>
-        (&mut self, 
+        (&mut self,
          _name : Option<&str>,
-         dom  : LinearDomain<N>) -> Result<<LinearDomain<N> as VarDomainTrait<Self>>::Result,String>    
-        where 
+         dom  : LinearDomain<N>) -> Result<<LinearDomain<N> as VarDomainTrait<Self>>::Result,String>
+        where
             Self : Sized
     {
         let (dt,b,sp,shape,is_integer) = dom.dissolve();
@@ -184,10 +184,10 @@ impl BaseModelTrait for ModelHighs {
 
         Ok(Variable::new((firstvari..firstvari+n).collect::<Vec<usize>>(), sp, &shape))
     }
-    
-    fn ranged_variable<const N : usize,R>(&mut self, _name : Option<&str>,dom : LinearRangeDomain<N>) -> Result<<LinearRangeDomain<N> as VarDomainTrait<Self>>::Result,String> 
-        where 
-            Self : Sized 
+
+    fn ranged_variable<const N : usize,R>(&mut self, _name : Option<&str>,dom : LinearRangeDomain<N>) -> Result<<LinearRangeDomain<N> as VarDomainTrait<Self>>::Result,String>
+        where
+            Self : Sized
     {
         let (shape,bl,bu,sp,is_integer) = dom.dissolve();
 
@@ -213,23 +213,23 @@ impl BaseModelTrait for ModelHighs {
     }
 
     fn linear_constraint<const N : usize>
-        (& mut self, 
+        (& mut self,
          _name  : Option<&str>,
          dom   : LinearDomain<N>,
-         _eshape : &[usize], 
-         ptr   : &[usize], 
-         subj  : &[usize], 
-         cof   : &[f64]) -> Result<<LinearDomain<N> as ConstraintDomain<N,Self>>::Result,String> 
+         _eshape : &[usize],
+         ptr   : &[usize],
+         subj  : &[usize],
+         cof   : &[f64]) -> Result<<LinearDomain<N> as ConstraintDomain<N,Self>>::Result,String>
     {
         let (dt,b,_sp,shape,_is_integer) = dom.dissolve();
 
-        assert_eq!(b.len(),ptr.len()-1); 
+        assert_eq!(b.len(),ptr.len()-1);
         let nrow = b.len();
 
         let a_row0 = self.a_ptr.len();
         let con_row0 = self.con_a_row.len();
         let n = shape.iter().product::<usize>();
-        
+
         self.a_ptr.reserve(n);
         {
             for (b,n) in ptr.iter().zip(ptr[1..].iter()).scan(self.a_subj.len(),|p,(&p0,&p1)| { let (b,n) = (*p,p1-p0); *p += n; Some((b,n)) }) {
@@ -242,13 +242,13 @@ impl BaseModelTrait for ModelHighs {
         self.a_cof.extend_from_slice(cof);
         self.con_a_row.reserve(n); for i in a_row0..a_row0+n { self.con_a_row.push(i); }
         self.cons.reserve(n); for i in con_row0..con_row0+n { self.cons.push(Item::Linear { index: i }) }
-        
+
         match dt {
             LinearDomainType::Zero => {
                 self.con_lb.extend_from_slice(b.as_slice());
                 self.con_ub.extend_from_slice(b.as_slice());
             },
-            LinearDomainType::Free => { 
+            LinearDomainType::Free => {
                 self.con_lb.resize(con_row0+nrow,f64::NEG_INFINITY);
                 self.con_ub.resize(con_row0+nrow,f64::INFINITY);
             },
@@ -266,13 +266,13 @@ impl BaseModelTrait for ModelHighs {
     }
 
     fn ranged_constraint<const N : usize>
-        (& mut self, 
-         _name : Option<&str>, 
+        (& mut self,
+         _name : Option<&str>,
          dom  : LinearRangeDomain<N>,
-         _eshape : &[usize], 
-         ptr : &[usize], 
-         subj : &[usize], 
-         cof : &[f64]) -> Result<<LinearRangeDomain<N> as ConstraintDomain<N,Self>>::Result,String> 
+         _eshape : &[usize],
+         ptr : &[usize],
+         subj : &[usize],
+         cof : &[f64]) -> Result<<LinearRangeDomain<N> as ConstraintDomain<N,Self>>::Result,String>
     {
         let (shape,bl,bu,_,_) = dom.dissolve();
 
@@ -280,7 +280,7 @@ impl BaseModelTrait for ModelHighs {
         let con_row0 = self.con_a_row.len();
 
         let n = shape.iter().product::<usize>();
-        
+
         self.a_ptr.reserve(n);
         for (b,n) in izip!(ptr.iter(),ptr[1..].iter()).scan(self.a_subj.len(),|p,(&p0,&p1)| { let (b,n) = (*p,p1-p0); *p += n; Some((b,n)) }) {
             self.a_ptr.push([b,n]);
@@ -344,17 +344,21 @@ impl BaseModelTrait for ModelHighs {
     }
 
     /// NOTE: Highs apepars to support ranged constraints and variables, and dual solution values,
-    /// however, it is not possible to directly get the dual values for the individual bounds. 
+    /// however, it is not possible to directly get the dual values for the individual bounds.
     fn solve(& mut self, sol_bas : & mut Solution, sol_itr : &mut Solution, sol_itg : &mut Solution) -> Result<(),String>
     {
         let mut p = highs::RowProblem::default();
 
         let mut c = vec![0.0; self.var_range_lb.len()];
+        //let cperm = Permutation::from(&self.c_subj);
+
+        //mosekcomodel::utils::Permutation::from(&self.c_sub);
+        //cperm.apply_mut(&mut c).zip(self.c_cof.iter()).for_each(|(t,&v)| *t = v);
         c.permute_by_mut(self.c_subj.as_slice()).zip(self.c_cof.iter()).for_each(|(t,&v)| *t = v);
-        
+
         let isint = self.var_range_int.iter().any(|&v| v);
-            
-        let cols : Vec<highs::Col> = 
+
+        let cols : Vec<highs::Col> =
             izip!(c.iter(), self.var_range_lb.iter(), self.var_range_ub.iter(),self.var_range_int.iter())
                 .map(|(&cj,&bl,&bu,&isint)| {
                     //println!("Variable: c_j = {}, bl = {}, bu = {}",cj,bl,bu);
@@ -365,7 +369,7 @@ impl BaseModelTrait for ModelHighs {
                         (false,false) => if ! isint { p.add_column::<f64,std::ops::RangeFull>(cj, ..) } else { p.add_integer_column(cj, bl..bu) },
                     }})
                 .collect();
-        
+
         let ptrb : Vec<usize> = self.a_ptr.iter().map(|v| v[0]).collect();
         let ptre : Vec<usize> = self.a_ptr.iter().map(|v| v[0]+v[1]).collect();
         izip!(self.con_lb.iter(),
@@ -373,7 +377,7 @@ impl BaseModelTrait for ModelHighs {
               self.a_subj.chunks_ptr2(ptrb.as_slice(),ptre.as_slice()),
               self.a_cof.chunks_ptr2(ptrb.as_slice(),ptre.as_slice()))
             .for_each(|(&bl,&bu,subj,cof)|
-                { 
+                {
                     let expr : Vec<(highs::Col,f64)> = cols.permute_by(subj).cloned().zip(cof.iter().cloned()).collect();
                     //println!("Constraint: bl = {}, bu = {}, expr = {:?}",bl,bu,expr);
                     match (bl > f64::NEG_INFINITY,bu < f64::INFINITY) {
@@ -387,7 +391,7 @@ impl BaseModelTrait for ModelHighs {
         let m = p.optimise(if self.sense_max { highs::Sense::Maximise } else { highs::Sense::Minimise });
 
         let sm = m.solve();
-         
+
 
         sol_bas.primal.status = SolutionStatus::Undefined;
         sol_bas.dual.status   = SolutionStatus::Undefined;
@@ -399,7 +403,7 @@ impl BaseModelTrait for ModelHighs {
         if let highs::HighsModelStatus::Optimal = sm.status() {
             let sol = sm.get_solution();
             let pobj = c.iter().zip(sol.columns().iter()).map(|(a,b)| a*b).sum();
-        
+
             if isint {
                 sol_itg.resize(self.vars.len(),self.cons.len());
                 sol_itg.primal.status = SolutionStatus::Optimal;
@@ -444,12 +448,12 @@ impl BaseModelTrait for ModelHighs {
                 for (item,xres,sres,&bl) in izip!(self.vars.iter(),sol_bas.primal.var.iter_mut(),sol_bas.dual.var.iter_mut(),self.var_range_lb.iter()) {
                     match item {
                         Item::Linear { index }      => { *xres = xx[*index]; *sres = sx[*index]; },
-                        Item::RangedLower { index } => { 
-                            *xres = xx[*index]; 
+                        Item::RangedLower { index } => {
+                            *xres = xx[*index];
                             if *xres < bl + 1e-7 { *sres = sx[*index]; } // at lower bound
                         },
-                        Item::RangedUpper { index } => { 
-                            *xres = xx[*index]; 
+                        Item::RangedUpper { index } => {
+                            *xres = xx[*index];
                             if *xres >= bl + 1e-7 { *sres = sx[*index]; } // not at lower bound
                         },
                     }
@@ -457,12 +461,12 @@ impl BaseModelTrait for ModelHighs {
                 for (item,xres,sres,&bl) in izip!(self.cons.iter(),sol_bas.primal.con.iter_mut(),sol_bas.dual.con.iter_mut(),self.con_lb.iter()) {
                     match item {
                         Item::Linear { index }      => { *xres = xc[*index]; *sres = sc[*index]; },
-                        Item::RangedLower { index } => { 
+                        Item::RangedLower { index } => {
                             *xres = xc[*index];
                             if *xres < bl + 1e-7 { *sres = sc[*index]; }
                         },
-                        Item::RangedUpper { index } => { 
-                            *xres = xc[*index]; 
+                        Item::RangedUpper { index } => {
+                            *xres = xc[*index];
                             if *xres >= bl + 1e-7 { *sres = sc[*index]; }
                         },
                     }
@@ -486,4 +490,3 @@ impl BaseModelTrait for ModelHighs {
         Err("Parameters not supported".to_string())
     }
 }
-

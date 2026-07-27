@@ -14,4 +14,4 @@ readme = "README.md"
 [dependencies]
 highs = "1.8.0"
 itertools = "0.14.0"
-mosekcomodel = "~0.4.0"
+mosekcomodel = "~0.5.0"
